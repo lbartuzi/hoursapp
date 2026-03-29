@@ -174,3 +174,20 @@ The forms now also preserve typed values after server-side validation errors.
 ## Validation stability fix
 - Fixed self-registration and invite-registration error handling so forms keep values without crashing.
 - Live username and email checks are now rendered inside the page content and run while typing.
+
+
+## Refactored structure
+
+- `app/` application package
+- `app/routes/` route modules
+- `app/services/` shared business logic
+- `tests/` regression suite
+- `run.py` recommended entrypoint
+
+Run locally:
+
+```bash
+pip install -r requirements.txt
+pytest -q
+python run.py
+```

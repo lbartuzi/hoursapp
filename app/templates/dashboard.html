@@ -1,0 +1,112 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Dashboard</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      {% if me['role'] == 'admin' %}
+      <div class="col-md-2">
+        <label class="form-label">User</label>
+        <select name="user_id" class="form-select">
+          <option value="">All users</option>
+          {% for user in users %}
+          <option value="{{ user.id }}" {% if selected_user == user.id|string %}selected{% endif %}>{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-2">
+        <label class="form-label">From</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">To</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Client</label>
+        <input type="text" name="client" value="{{ client }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Project</label>
+        <input type="text" name="project" value="{{ project }}" class="form-control">
+      </div>
+      <div class="col-md-4 d-flex align-items-end gap-2 flex-wrap">
+        <button class="btn btn-secondary">Apply</button>
+        <a class="btn btn-outline-success" href="{{ url_for('export_dashboard_png', date_from=date_from, date_to=date_to, client=client, project=project, user_id=selected_user) }}">Export PNG</a>
+        <a class="btn btn-outline-primary" href="{{ url_for('index', date_from=date_from, date_to=date_to, client=client, project=project, user_id=selected_user) }}">Back to entries</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Total hours</div><div class="h4 mb-1">{{ format_hours_hm(metrics.total_hours) }}</div><div class="text-muted">{{ '%.2f'|format(metrics.total_hours) }} h</div></div></div></div>
+  <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Direct vs indirect</div><div class="h5 mb-1">{{ format_hours_hm(metrics.direct_hours) }} / {{ format_hours_hm(metrics.indirect_hours) }}</div><div class="text-muted">Direct / indirect</div></div></div></div>
+  <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Active days</div><div class="h4 mb-1">{{ metrics.active_days }}</div><div class="text-muted">Avg {{ format_hours_hm(metrics.avg_hours_per_active_day) }} per active day</div></div></div></div>
+  <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Coverage</div><div class="h5 mb-1">{{ metrics.active_clients }} clients / {{ metrics.active_projects }} projects</div><div class="text-muted">Busiest weekday: {{ metrics.busiest_weekday_label }}</div></div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card h-100"><div class="card-body"><div class="text-muted small">Most productive month</div><div class="h4 mb-1">{{ metrics.busiest_month_label }}</div><div class="text-muted">{{ format_hours_hm(metrics.busiest_month_hours) }}</div></div></div></div>
+  <div class="col-md-6"><div class="card h-100"><div class="card-body"><div class="text-muted small">Latest month in result set</div><div class="h4 mb-1">{{ format_hours_hm(metrics.recent_month_total) }}</div><div class="text-muted">Based on current filters</div></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8"><div class="card h-100"><div class="card-body"><h2 class="h5">Hours per month</h2><div class="chart-panel"><canvas id="monthlyChart"></canvas></div></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-body"><h2 class="h5">Direct vs indirect</h2><div class="chart-panel chart-panel-tall"><canvas id="splitChart"></canvas></div></div></div></div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Top clients</h2><div class="chart-panel chart-panel-tall"><canvas id="clientsChart"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h5">Top projects</h2><div class="chart-panel chart-panel-tall"><canvas id="projectsChart"></canvas></div></div></div></div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-12"><div class="card h-100"><div class="card-body"><h2 class="h5">Hours by weekday</h2><div class="chart-panel chart-panel-wide"><canvas id="weekdayChart"></canvas></div></div></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const monthlyLabels = {{ metrics.monthly_chart_labels|tojson }};
+const monthlyValues = {{ metrics.monthly_chart_values|tojson }};
+const clientLabels = {{ metrics.top_clients_labels|tojson }};
+const clientValues = {{ metrics.top_clients_values|tojson }};
+const projectLabels = {{ metrics.top_projects_labels|tojson }};
+const projectValues = {{ metrics.top_projects_values|tojson }};
+const weekdayLabels = {{ metrics.weekday_labels|tojson }};
+const weekdayValues = {{ metrics.weekday_values|tojson }};
+
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: { labels: monthlyLabels, datasets: [{ label: 'Hours', data: monthlyValues }] },
+  options: { responsive: true, resizeDelay: 150, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('splitChart'), {
+  type: 'doughnut',
+  data: { labels: ['Direct', 'Indirect'], datasets: [{ data: [{{ metrics.direct_hours|round(2) }}, {{ metrics.indirect_hours|round(2) }}] }] },
+  options: { responsive: true, resizeDelay: 150, maintainAspectRatio: false }
+});
+
+new Chart(document.getElementById('clientsChart'), {
+  type: 'bar',
+  data: { labels: clientLabels, datasets: [{ label: 'Hours', data: clientValues }] },
+  options: { indexAxis: 'y', responsive: true, resizeDelay: 150, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('projectsChart'), {
+  type: 'bar',
+  data: { labels: projectLabels, datasets: [{ label: 'Hours', data: projectValues }] },
+  options: { indexAxis: 'y', responsive: true, resizeDelay: 150, maintainAspectRatio: false, scales: { x: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('weekdayChart'), {
+  type: 'bar',
+  data: { labels: weekdayLabels, datasets: [{ label: 'Hours', data: weekdayValues }] },
+  options: { responsive: true, resizeDelay: 150, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Hour entries</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      {% if me['role'] == 'admin' %}
+      <div class="col-md-2">
+        <label class="form-label">User</label>
+        <select name="user_id" class="form-select">
+          {% for user in users %}
+          <option value="{{ user.id }}">{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-2">
+        <label class="form-label">Date</label>
+        <input type="date" name="work_date" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Minutes</label>
+        <input type="number" step="1" min="0" name="minutes" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Client</label>
+        <input type="text" name="client" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Project</label>
+        <input type="text" name="project" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Activity</label>
+        <input type="text" name="activity" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Type</label>
+        <select name="hour_type" class="form-select">
+          <option value="direct">Direct</option>
+          <option value="indirect">Indirect</option>
+        </select>
+      </div>
+      <div class="col-10">
+        <label class="form-label">Notes</label>
+        <input type="text" name="notes" class="form-control">
+      </div>
+      <div class="col-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100">Add entry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      {% if me['role'] == 'admin' %}
+      <div class="col-md-2">
+        <label class="form-label">User</label>
+        <select name="user_id" class="form-select">
+          <option value="">All users</option>
+          {% for user in users %}
+          <option value="{{ user.id }}" {% if selected_user == user.id|string %}selected{% endif %}>{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-2">
+        <label class="form-label">From</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">To</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Client</label>
+        <input type="text" name="client" value="{{ client }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Project</label>
+        <input type="text" name="project" value="{{ project }}" class="form-control">
+      </div>
+      <div class="col-md-4 d-flex align-items-end gap-2 flex-wrap">
+        <button class="btn btn-secondary">Filter</button>
+        <a class="btn btn-success" href="{{ url_for('export_csv', date_from=date_from, date_to=date_to, client=client, project=project, user_id=selected_user) }}">CSV</a>
+        <a class="btn btn-outline-success" href="{{ url_for('export_xlsx', date_from=date_from, date_to=date_to, client=client, project=project, user_id=selected_user) }}">Excel</a>
+        <a class="btn btn-outline-dark" href="{{ url_for('dashboard', date_from=date_from, date_to=date_to, client=client, project=project, user_id=selected_user) }}">Dashboard</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row mb-3 g-3">
+  <div class="col-md-4"><div class="alert alert-primary mb-0">Total: {{ format_hours_hm(total_hours) }} <span class="text-muted">({{ '%.2f'|format(total_hours) }} h)</span></div></div>
+  <div class="col-md-4"><div class="alert alert-success mb-0">Direct: {{ format_hours_hm(direct_hours) }} <span class="text-muted">({{ '%.2f'|format(direct_hours) }} h)</span></div></div>
+  <div class="col-md-4"><div class="alert alert-warning mb-0">Indirect: {{ format_hours_hm(indirect_hours) }} <span class="text-muted">({{ '%.2f'|format(indirect_hours) }} h)</span></div></div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            {% if me['role'] == 'admin' %}<th>User</th>{% endif %}
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Client</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Type</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in entries %}
+          <tr>
+            {% if me['role'] == 'admin' %}<td>{{ row.username }}</td>{% endif %}
+            <td>{{ row.work_date }}</td>
+            <td>{{ format_hours_hm(row.hours) }} <span class="text-muted">({{ minutes_from_hours(row.hours) }} min)</span></td>
+            <td>{{ row.client }}</td>
+            <td>{{ row.project }}</td>
+            <td>{{ row.activity }}</td>
+            <td>{{ row.hour_type }}</td>
+            <td>{{ row.notes }}</td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-2 flex-nowrap action-buttons">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit', entry_id=row.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('delete_entry', entry_id=row.id) }}" class="m-0">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this entry?')">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="text-center text-muted">No entries found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

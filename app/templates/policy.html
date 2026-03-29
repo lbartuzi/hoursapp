@@ -1,0 +1,14 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h1 class="h3 mb-3">Data retention policy</h1>
+    <p>This application stores account data and hour registration data for active users. Accounts that have not logged in for <strong>{{ retention_days }} days</strong> are automatically removed, including related hour entries and security tokens.</p>
+    <p>Where possible, a reminder email is sent <strong>{{ warning_days }} days</strong> before scheduled deletion.</p>
+    <p>Deletion is based on the user's last login timestamp. If the account has never been used, the creation date is used instead.</p>
+    <p>Administrators can run retention cleanup manually from the admin panel, and the application also performs periodic retention checks automatically during normal use.</p><p><strong>Current configured retention:</strong> {{ retention_days }} days. <strong>Current configured warning period:</strong> {{ warning_days }} days.</p>
+    <p>Public service URL for token links: <code>{{ public_base_url }}</code></p>
+  </div>
+</div>
+{% endblock %}

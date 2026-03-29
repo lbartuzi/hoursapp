@@ -2,8 +2,7 @@
 
 ## Summary
 
-This project deletes inactive user accounts and related data after **2555 days** / **7 years** without login activity by default.
-Still strongly advised to export all registrations anually. 
+This project deletes inactive user accounts and related data after **365 days** without login activity by default.
 
 ## Scope
 

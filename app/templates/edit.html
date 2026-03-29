@@ -1,0 +1,57 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Edit entry</h1>
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      {% if me['role'] == 'admin' %}
+      <div class="col-md-2">
+        <label class="form-label">User</label>
+        <select name="user_id" class="form-select">
+          {% for user in users %}
+          <option value="{{ user.id }}" {% if entry.user_id == user.id %}selected{% endif %}>{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-2">
+        <label class="form-label">Date</label>
+        <input type="date" name="work_date" value="{{ entry.work_date }}" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Minutes</label>
+        <input type="number" step="1" min="0" name="minutes" value="{{ minutes_from_hours(entry.hours) }}" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Client</label>
+        <input type="text" name="client" value="{{ entry.client }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Project</label>
+        <input type="text" name="project" value="{{ entry.project }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Activity</label>
+        <input type="text" name="activity" value="{{ entry.activity }}" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Type</label>
+        <select name="hour_type" class="form-select">
+          <option value="direct" {% if entry.hour_type == 'direct' %}selected{% endif %}>Direct</option>
+          <option value="indirect" {% if entry.hour_type == 'indirect' %}selected{% endif %}>Indirect</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Notes</label>
+        <input type="text" name="notes" value="{{ entry.notes }}" class="form-control">
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary">Save</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
