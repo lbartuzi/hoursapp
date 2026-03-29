@@ -2,6 +2,12 @@
 
 Open-source, self-hosted time tracking app with a SaaS-like workflow, built with Flask and SQLite.
 
+## Live application
+
+The application is available here:
+
+- https://happ.pilbartuzi.homeip.net/
+
 ## Highlights
 
 - Multi-user support
@@ -11,16 +17,21 @@ Open-source, self-hosted time tracking app with a SaaS-like workflow, built with
 - CSV and Excel export
 - Dashboard with charts and PNG export
 - Invite-only registration with secure tokenized links
+- Optional public self-registration
 - Email confirmation required before login
 - Forgot-password flow with secure reset token
 - Admin-managed email templates
-- Account self-delete and admin delete
+- Account self-delete for regular users
+- Admin account protection against self-delete and admin-screen delete
 - Data retention policy with warning emails and automatic cleanup
 - Theme preference: auto, dark, light
+- Live username and email validation on registration pages
+- Regression test suite runnable through Docker Compose
 
 ## Why SQLite
 
 SQLite is a good fit for this app's expected scale:
+
 - low operational overhead
 - simple backup and restore
 - reliable for small to medium datasets
@@ -28,18 +39,50 @@ SQLite is a good fit for this app's expected scale:
 
 For the intended use case, SQLite remains appropriate.
 
+## Architecture
+
+The refactored version is split into a scalable structure:
+
+```text
+app/
+  __init__.py
+  config.py
+  db.py
+  decorators.py
+  security.py
+  routes/
+    auth.py
+    entries.py
+    admin.py
+  services/
+    core.py
+  templates/
+  static/
+run.py
+app.py
+tests/
+Dockerfile
+docker-compose.yml
+```
+
 ## Quick start
 
 ```bash
 docker compose up --build -d
 ```
 
-Open:
+Open locally:
+
 - `http://localhost:8080`
+
+Or use the hosted instance:
+
+- `https://happ.pilbartuzi.homeip.net/`
 
 ## Default admin account
 
 Set these before first start:
+
 - `ADMIN_USERNAME`
 - `ADMIN_PASSWORD`
 - `ADMIN_EMAIL`
@@ -56,6 +99,8 @@ Set these before first start:
 - `SMTP_USE_TLS`
 - `RETENTION_DAYS`
 - `RETENTION_WARNING_DAYS`
+- `SELF_REGISTRATION_ENABLED`
+- `DB_PATH`
 
 For Gmail, use an app password instead of your normal account password.
 
@@ -68,12 +113,61 @@ For Gmail, use an app password instead of your normal account password.
 5. User confirms email.
 6. User can log in.
 
+## Self registration
+
+The app also supports an optional public self-registration page at `/register`.
+
+Behavior:
+
+- controlled by `SELF_REGISTRATION_ENABLED`
+- can also be toggled from the admin settings page
+- requires email confirmation before first login
+- does not bypass the confirmation flow
+
+Default:
+
+- disabled
+
+Docker variable:
+
+- `SELF_REGISTRATION_ENABLED=true|false`
+
+## Live registration validation
+
+Registration forms validate live while the user types:
+
+- username uniqueness check with clickable suggested alternative
+- email uniqueness check with direct link to password reset when the email already exists
+- typed values are preserved after server-side validation errors
+
 ## Password reset flow
 
 1. User opens **Forgot password**
 2. User enters email
 3. App sends a reset link if the account exists
 4. User sets a new password
+
+## Admin user editing
+
+From the **Users** page, admins can open an **Edit** screen for any user and manually change:
+
+- username
+- email address
+- email confirmed flag
+- role
+- theme preference
+
+This is useful after upgrades from older databases or when fixing onboarding issues manually.
+
+## Admin account safety
+
+The application is designed so the admin account cannot be removed through the normal UI:
+
+- admins cannot self-delete from the profile page
+- admin users cannot be deleted from the admin users screen
+- the bootstrap admin account cannot be demoted to a normal user
+
+This protects against accidental lockout.
 
 ## Data retention
 
@@ -86,6 +180,7 @@ For Gmail, use an app password instead of your normal account password.
 ## Email templates
 
 Configurable from **Admin**:
+
 - invite subject/body
 - confirmation subject/body
 - reset subject/body
@@ -93,6 +188,7 @@ Configurable from **Admin**:
 - application name
 
 Supported placeholders:
+
 - `{{app_name}}`
 - `{{email}}`
 - `{{public_base_url}}`
@@ -106,88 +202,57 @@ Supported placeholders:
 ## Existing database migration
 
 This version auto-migrates older SQLite databases by adding missing:
+
 - user columns
 - token table
 - settings table
 
 Legacy entries without a user are assigned to the admin account.
 
+## Docker notes
+
+- Keep the SQLite database on a mounted volume
+- Use a real `SECRET_KEY`
+- Run a single writing app container when using SQLite
+- Prefer a reverse proxy with HTTPS in front of the app
+
+Example persistent database mount:
+
+```yaml
+volumes:
+  - ./data:/data
+environment:
+  DB_PATH: /data/hours.db
+```
+
+## Running tests
+
+Run the regression suite through Docker Compose:
+
+```bash
+docker compose run --rm test pytest -v
+```
+
+Or if your `test` service already uses `pytest -v` as its command:
+
+```bash
+docker compose run --rm test
+```
+
+The tests should use an isolated database such as `/tmp/test_hours.db`, not your live database.
+
+## Local development
+
+```bash
+pip install -r requirements.txt
+pytest -v
+python run.py
+```
+
 ## Notes
 
 - The admin account is marked as confirmed automatically
 - Non-admin accounts must confirm email before first login
-- Theme preference is stored per user, and also persisted in a browser cookie
+- Theme preference is stored per user and also persisted in a browser cookie
+- The dashboard depends on Chart.js being allowed by the Content Security Policy
 
-
-## Self registration
-
-The app now also supports an optional public self-registration page at `/register`.
-
-Behavior:
-- controlled by `SELF_REGISTRATION_ENABLED`
-- can also be toggled from the admin settings page
-- requires email confirmation before first login
-- does not bypass the confirmation flow
-
-Default:
-- disabled
-
-Docker variable:
-- `SELF_REGISTRATION_ENABLED=true|false`
-
-
-## Admin user editing
-
-From the **Users** page, admins can now open an **Edit** screen for any user and manually change:
-- email address
-- email confirmed flag
-- role
-- theme preference
-
-This is useful after upgrades from older databases or when fixing onboarding issues manually.
-
-
-## Additional account improvements
-
-- Users can request an email-address change from the profile page
-- The new email becomes active only after confirmation through a tokenized email link
-- Username availability is checked live on registration pages
-- If a username already exists, the UI suggests an alternative such as `name2`
-- Admin user edit now also supports changing usernames
-- Entry action buttons are aligned side-by-side for a cleaner table layout
-
-
-## Fixes
-- Restored missing username uniqueness helper used by self-registration and invite registration.
-- Improved live username validation trigger behavior.
-
-
-## Live registration validation
-
-Registration forms now validate live while the user types:
-- username uniqueness check with clickable suggested alternative
-- email uniqueness check with direct link to password reset when the email already exists
-
-The forms now also preserve typed values after server-side validation errors.
-
-
-## Validation stability fix
-- Fixed self-registration and invite-registration error handling so forms keep values without crashing.
-- Live username and email checks are now rendered inside the page content and run while typing.
-
-
-## Refactored structure
-
-- `app/` application package
-- `app/routes/` route modules
-- `app/services/` shared business logic
-- `tests/` regression suite
-- `run.py` recommended entrypoint
-
-Run locally:
-
-```bash
-pip install -r requirements.txt
-pytest -q
-python run.py
-```
