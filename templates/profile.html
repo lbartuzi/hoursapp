@@ -1,0 +1,86 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Profile</h1>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Account</h2>
+      <p class="mb-1"><strong>Username:</strong> {{ me.username }}</p>
+      <p class="mb-1"><strong>Email:</strong> {{ me.email }}</p>
+      <p class="mb-0"><strong>Email confirmed:</strong> {{ 'Yes' if me.email_confirmed else 'No' }}</p>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Theme</h2>
+      <form method="post" class="row g-3">
+        <input type="hidden" name="action" value="theme">
+        <div class="col-md-8">
+          <select name="theme_pref" class="form-select">
+            <option value="auto" {% if me.theme_pref == 'auto' %}selected{% endif %}>Auto</option>
+            <option value="light" {% if me.theme_pref == 'light' %}selected{% endif %}>Light</option>
+            <option value="dark" {% if me.theme_pref == 'dark' %}selected{% endif %}>Dark</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-primary w-100">Save</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Change password</h2>
+      <form method="post" class="row g-3">
+        <input type="hidden" name="action" value="password">
+        <div class="col-12">
+          <label class="form-label">Current password</label>
+          <input type="password" name="current_password" class="form-control" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">New password</label>
+          <input type="password" name="new_password" class="form-control" minlength="8" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Repeat new password</label>
+          <input type="password" name="new_password2" class="form-control" minlength="8" required>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary">Update password</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Change email</h2>
+      <p class="text-muted">A confirmation link will be sent to the new email address before the change becomes active.</p>
+      <form method="post" class="row g-3">
+        <input type="hidden" name="action" value="email">
+        <div class="col-12">
+          <label class="form-label">New email</label>
+          <input type="email" name="new_email" class="form-control" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Current password</label>
+          <input type="password" name="current_password_for_email" class="form-control" required>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary">Send confirmation link</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-danger"><div class="card-body">
+      <h2 class="h5 text-danger">Danger zone</h2>
+      <p class="text-muted">Deleting your account also removes all related hour entries and tokens.</p>
+      <form method="post" action="{{ url_for('delete_self') }}" onsubmit="return confirm('Delete your account and all related data?');">
+        <button class="btn btn-danger">Delete my account</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

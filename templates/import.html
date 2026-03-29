@@ -1,0 +1,40 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Import CSV</h1>
+<div class="card mb-4">
+  <div class="card-body">
+    <p class="mb-3">
+      Import a CSV file with <code>date</code> plus either <code>minutes</code> or <code>hours</code>.
+      Optional columns: <code>user</code>, <code>client</code>, <code>project</code>, <code>activity</code>, <code>type</code>, <code>notes</code>.
+    </p>
+    <form method="post" enctype="multipart/form-data" class="row g-3">
+      {% if me['role'] == 'admin' %}
+      <div class="col-md-4">
+        <label class="form-label">Default user</label>
+        <select name="user_id" class="form-select">
+          {% for user in users %}
+          <option value="{{ user.id }}">{{ user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-md-8">
+        <label class="form-label">CSV file</label>
+        <input type="file" name="file" accept=".csv,text/csv" class="form-control" required>
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary">Import CSV</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">Back</a>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <div class="card-body">
+    <pre class="bg-body-tertiary border rounded p-3 mb-0">date,minutes,client,project,activity,type,notes
+2026-03-01,150,Acme,Website,Development,direct,Landing page update
+2026-03-01,60,,Administration,Invoices,indirect,Bookkeeping</pre>
+  </div>
+</div>
+{% endblock %}

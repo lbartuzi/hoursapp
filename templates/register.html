@@ -1,0 +1,134 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h3 mb-3">Complete registration</h1>
+        <p class="text-muted">This invite is reserved for <strong>{{ invite_email }}</strong>. After registration, you will receive a separate email confirmation link.</p>
+        <form method="post" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" id="usernameInput" value="{{ form_data.username if form_data else '' }}" class="form-control" required><div id="usernameFeedback" class="form-text"></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" id="emailInput" value="{{ form_data.email if form_data else invite_email }}" class="form-control" required><div id="emailFeedback" class="form-text"></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" minlength="8" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Repeat password</label>
+            <input type="password" name="password2" class="form-control" minlength="8" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Theme</label>
+            <select name="theme_pref" class="form-select">
+              <option value="auto" {% if (form_data.theme_pref if form_data else 'auto') == 'auto' %}selected{% endif %}>Auto</option>
+              <option value="light" {% if (form_data.theme_pref if form_data else 'auto') == 'light' %}selected{% endif %}>Light</option>
+              <option value="dark" {% if (form_data.theme_pref if form_data else 'auto') == 'dark' %}selected{% endif %}>Dark</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Create account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const usernameInput = document.getElementById('usernameInput');
+  const usernameFeedback = document.getElementById('usernameFeedback');
+  const emailInput = document.getElementById('emailInput');
+  const emailFeedback = document.getElementById('emailFeedback');
+  let usernameTimer = null;
+  let emailTimer = null;
+
+  async function checkUsernameAvailability() {
+    if (!usernameInput || !usernameFeedback) return;
+    const value = usernameInput.value.trim();
+    if (!value) {
+      usernameFeedback.textContent = '';
+      usernameFeedback.className = 'form-text';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/check-username?username=${encodeURIComponent(value)}`);
+      const data = await res.json();
+      if (data.available) {
+        usernameFeedback.textContent = 'Username is available.';
+        usernameFeedback.className = 'form-text text-success';
+      } else {
+        usernameFeedback.innerHTML = `Username already exists. Suggested alternative: <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="useSuggestedUsername">${data.suggestion}</button>`;
+        usernameFeedback.className = 'form-text text-warning';
+        const btn = document.getElementById('useSuggestedUsername');
+        if (btn) {
+          btn.onclick = () => {
+            usernameInput.value = data.suggestion;
+            checkUsernameAvailability();
+          };
+        }
+      }
+    } catch (e) {
+      usernameFeedback.textContent = '';
+      usernameFeedback.className = 'form-text';
+    }
+  }
+
+  async function checkEmailAvailability() {
+    if (!emailInput || !emailFeedback) return;
+    const value = emailInput.value.trim();
+    if (!value) {
+      emailFeedback.textContent = '';
+      emailFeedback.className = 'form-text';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/check-email?email=${encodeURIComponent(value)}`);
+      const data = await res.json();
+      if (data.available) {
+        emailFeedback.textContent = 'Email address is available.';
+        emailFeedback.className = 'form-text text-success';
+      } else if (data.exists) {
+        emailFeedback.innerHTML = `Email address already exists. <a href="${data.forgot_password_url}">Reset password</a>`;
+        emailFeedback.className = 'form-text text-warning';
+      } else {
+        emailFeedback.textContent = '';
+        emailFeedback.className = 'form-text';
+      }
+    } catch (e) {
+      emailFeedback.textContent = '';
+      emailFeedback.className = 'form-text';
+    }
+  }
+
+  if (usernameInput) {
+    usernameInput.addEventListener('input', () => {
+      clearTimeout(usernameTimer);
+      usernameTimer = setTimeout(checkUsernameAvailability, 250);
+    });
+    usernameInput.addEventListener('blur', checkUsernameAvailability);
+    checkUsernameAvailability();
+  }
+
+  if (emailInput) {
+    emailInput.addEventListener('input', () => {
+      clearTimeout(emailTimer);
+      emailTimer = setTimeout(checkEmailAvailability, 250);
+    });
+    emailInput.addEventListener('blur', checkEmailAvailability);
+    checkEmailAvailability();
+  }
+})();
+</script>
+
+{% endblock %}
+
+
+

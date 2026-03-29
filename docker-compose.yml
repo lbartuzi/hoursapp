@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  hours:
+    build: .
+    container_name: hours_app
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Europe/Amsterdam
+      SECRET_KEY: change-this-secret-key
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-this-password
+      ADMIN_EMAIL: admin@example.com
+      PUBLIC_BASE_URL: http://localhost:8080
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: your-gmail-address@gmail.com
+      SMTP_PASS: your-app-password
+      SMTP_FROM: your-gmail-address@gmail.com
+      SMTP_USE_TLS: "true"
+      RETENTION_DAYS: 365
+      RETENTION_WARNING_DAYS: 28
+      SELF_REGISTRATION_ENABLED: "false"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

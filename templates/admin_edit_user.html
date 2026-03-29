@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Edit user</h1>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" value="{{ target_user.username }}" required>
+        <div class="form-text">Usernames must be unique. Suggested alternative: <code>{{ suggested_username }}</code></div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Email address</label>
+        <input type="email" name="email" class="form-control" value="{{ target_user.email }}" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Role</label>
+        <select name="role" class="form-select">
+          <option value="user" {% if target_user.role == 'user' %}selected{% endif %}>User</option>
+          <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>Admin</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Theme</label>
+        <select name="theme_pref" class="form-select">
+          <option value="auto" {% if target_user.theme_pref == 'auto' %}selected{% endif %}>Auto</option>
+          <option value="light" {% if target_user.theme_pref == 'light' %}selected{% endif %}>Light</option>
+          <option value="dark" {% if target_user.theme_pref == 'dark' %}selected{% endif %}>Dark</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Email confirmed</label>
+        <select name="email_confirmed" class="form-select">
+          <option value="1" {% if target_user.email_confirmed %}selected{% endif %}>Yes</option>
+          <option value="0" {% if not target_user.email_confirmed %}selected{% endif %}>No</option>
+        </select>
+      </div>
+
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-primary">Save changes</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('users') }}">Back</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

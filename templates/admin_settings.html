@@ -1,0 +1,82 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-3">Admin settings</h1>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card h-100"><div class="card-body">
+      <h2 class="h5">Environment overview</h2>
+      <p class="mb-2"><strong>Public base URL:</strong><br>{{ public_base_url }}</p>
+      <p class="mb-2"><strong>SMTP host:</strong><br>{{ 'Configured' if public_base_url else 'Not set' }}</p>
+      <p class="mb-3 text-muted">SMTP credentials and PUBLIC_BASE_URL are loaded from Docker environment variables.</p>
+      <form method="post" action="{{ url_for('admin_run_retention') }}" onsubmit="return confirm('Run retention cleanup now?');">
+        <button class="btn btn-outline-danger">Run retention cleanup now</button>
+      </form>
+    </div></div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card"><div class="card-body">
+      <h2 class="h5">Application and email templates</h2>
+      <form method="post" class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label">App name</label>
+          <input type="text" name="app_name" value="{{ settings.app_name }}" class="form-control">
+        </div>
+<div class="col-md-4">
+          <label class="form-label">Self registration</label>
+          <select name="self_registration_enabled" class="form-select">
+            <option value="true" {% if settings.self_registration_enabled == "true" %}selected{% endif %}>Enabled</option>
+            <option value="false" {% if settings.self_registration_enabled != "true" %}selected{% endif %}>Disabled</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Invite subject</label>
+          <input type="text" name="template_invite_subject" value="{{ settings.template_invite_subject }}" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Confirmation subject</label>
+          <input type="text" name="template_confirm_subject" value="{{ settings.template_confirm_subject }}" class="form-control">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Invite body</label>
+          <textarea name="template_invite_body" rows="6" class="form-control">{{ settings.template_invite_body }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Confirmation body</label>
+          <textarea name="template_confirm_body" rows="6" class="form-control">{{ settings.template_confirm_body }}</textarea>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Reset subject</label>
+          <input type="text" name="template_reset_subject" value="{{ settings.template_reset_subject }}" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Retention warning subject</label>
+          <input type="text" name="template_retention_subject" value="{{ settings.template_retention_subject }}" class="form-control">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Reset body</label>
+          <textarea name="template_reset_body" rows="6" class="form-control">{{ settings.template_reset_body }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Retention warning body</label>
+          <textarea name="template_retention_body" rows="6" class="form-control">{{ settings.template_retention_body }}</textarea>
+        </div>
+
+        <div class="col-12">
+          <div class="small text-muted">
+            Available placeholders: {{ '{{app_name}}' }}, {{ '{{email}}' }}, {{ '{{public_base_url}}' }}, {{ '{{register_link}}' }}, {{ '{{confirm_link}}' }}, {{ '{{reset_link}}' }}, {{ '{{login_link}}' }}, {{ '{{expires_at}}' }}, {{ '{{deletion_date}}' }}.
+          </div>
+        </div>
+
+        <div class="col-12">
+          <button class="btn btn-primary">Save settings</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
